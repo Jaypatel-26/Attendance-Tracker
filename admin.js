@@ -89,33 +89,48 @@ function playNotificationSound(type = 'info') {
     const ctx = initAudioContext();
     if (!ctx) return;
 
-    // Resume context if suspended (for mobile)
+    // Always try to resume context (important for mobile/edit mode)
     if (ctx.state === 'suspended') {
       ctx.resume().catch(() => {});
+    } else if (ctx.state === 'running') {
+      // Context is ready, play sound immediately
+      playSound(ctx, type);
+      return;
     }
 
+    // If resuming, wait a tiny bit then play
+    const checkContext = setInterval(() => {
+      if (ctx.state === 'running') {
+        clearInterval(checkContext);
+        playSound(ctx, type);
+      }
+    }, 5);
+
+    setTimeout(() => clearInterval(checkContext), 100);
+  } catch (e) {
+    // Silently fail if Web Audio API not available
+  }
+}
+
+function playSound(ctx, type) {
+  try {
     const now = ctx.currentTime;
     let notes = [];
     
     if (type === 'success') {
-      // Success: ascending notes - quick and bright
       notes = [
-        { freq: 523.25, duration: 0.08 },  // C5
-        { freq: 659.25, duration: 0.08 },  // E5
-        { freq: 783.99, duration: 0.12 }   // G5
+        { freq: 523.25, duration: 0.08 },
+        { freq: 659.25, duration: 0.08 },
+        { freq: 783.99, duration: 0.12 }
       ];
     } else if (type === 'error') {
-      // Error: low descending notes
       notes = [
-        { freq: 349.23, duration: 0.1 },   // F4
-        { freq: 261.63, duration: 0.1 },   // C4
-        { freq: 196.00, duration: 0.2 }    // G3
+        { freq: 349.23, duration: 0.1 },
+        { freq: 261.63, duration: 0.1 },
+        { freq: 196.00, duration: 0.2 }
       ];
     } else if (type === 'info') {
-      // Info: single quick note
-      notes = [
-        { freq: 440, duration: 0.15 }      // A4
-      ];
+      notes = [{ freq: 440, duration: 0.15 }];
     }
 
     let startTime = now;
@@ -123,44 +138,33 @@ function playNotificationSound(type = 'info') {
       try {
         const osc = ctx.createOscillator();
         const gain = ctx.createGain();
-
         osc.frequency.setValueAtTime(note.freq, startTime);
         osc.type = 'sine';
-        
         gain.gain.setValueAtTime(0.3, startTime);
         gain.gain.exponentialRampToValueAtTime(0.01, startTime + note.duration);
-
         osc.connect(gain);
         gain.connect(ctx.destination);
-
         osc.start(startTime);
         osc.stop(startTime + note.duration);
-
         startTime += note.duration;
-      } catch (e) {
-        // Silently continue if note creation fails
-      }
+      } catch (e) {}
     });
-  } catch (e) {
-    // Silently fail if Web Audio API not available
-  }
+  } catch (e) {}
 }
 
 function speakMessage(text) {
-  try {
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel();
-    
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.95;
-    utterance.pitch = 1.0;
-    utterance.volume = 0.8;
-    utterance.lang = 'en-US';
-    
-    window.speechSynthesis.speak(utterance);
-  } catch (e) {
-    // Silently fail if Speech Synthesis not available
-  }
+  // Use async/non-blocking approach to not delay sound
+  setTimeout(() => {
+    try {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.rate = 0.95;
+      utterance.pitch = 1.0;
+      utterance.volume = 0.8;
+      utterance.lang = 'en-US';
+      window.speechSynthesis.speak(utterance);
+    } catch (e) {}
+  }, 50);
 }
 
 
