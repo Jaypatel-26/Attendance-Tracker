@@ -453,6 +453,7 @@ function goToAdmin() {
 }
 
 function handleLogout() {
+  showToast('You have been logged out!', 'info');
   localStorage.removeItem('att_loggedIn');
   currentUser = null;
   attendanceData = {};
@@ -683,10 +684,67 @@ function getAttendanceStatusMessage(pct) {
 
 
 // ==========================================
+// NOTIFICATION SOUNDS
+// ==========================================
+
+function playNotificationSound(type = 'info') {
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const now = audioContext.currentTime;
+    
+    let notes = [];
+    if (type === 'success') {
+      // Success: ascending notes
+      notes = [
+        { freq: 523.25, duration: 0.1 }, // C5
+        { freq: 659.25, duration: 0.1 }, // E5
+        { freq: 783.99, duration: 0.2 }  // G5
+      ];
+    } else if (type === 'error') {
+      // Error: low descending notes
+      notes = [
+        { freq: 349.23, duration: 0.15 }, // F4
+        { freq: 261.63, duration: 0.15 }, // C4
+        { freq: 196.00, duration: 0.3 }   // G3
+      ];
+    } else if (type === 'info') {
+      // Info: single cheerful note
+      notes = [
+        { freq: 440, duration: 0.25 } // A4
+      ];
+    }
+    
+    let startTime = now;
+    notes.forEach(note => {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      osc.frequency.value = note.freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.2, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, startTime + note.duration);
+      
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      osc.start(startTime);
+      osc.stop(startTime + note.duration);
+      
+      startTime += note.duration;
+    });
+  } catch (e) {
+    // Silently fail if Web Audio API not available
+  }
+}
+
+// ==========================================
 // TOAST NOTIFICATIONS
 // ==========================================
 
 function showToast(message, type = 'info') {
+  // Play notification sound
+  playNotificationSound(type);
+  
   const container = document.getElementById('toast-container');
   const toast = document.createElement('div');
   toast.className = `toast ${type}`;

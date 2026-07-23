@@ -59,6 +59,60 @@ function getSlotPoints(dateStr, slotIndex, batch) {
   return entry.type === 'lab' ? 2 : 1;
 }
 
+// ==========================================
+// NOTIFICATION SOUNDS
+// ==========================================
+
+function playNotificationSound(type = 'info') {
+  try {
+    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    const now = audioContext.currentTime;
+    
+    let notes = [];
+    if (type === 'success') {
+      // Success: ascending notes
+      notes = [
+        { freq: 523.25, duration: 0.1 }, // C5
+        { freq: 659.25, duration: 0.1 }, // E5
+        { freq: 783.99, duration: 0.2 }  // G5
+      ];
+    } else if (type === 'error') {
+      // Error: low descending notes
+      notes = [
+        { freq: 349.23, duration: 0.15 }, // F4
+        { freq: 261.63, duration: 0.15 }, // C4
+        { freq: 196.00, duration: 0.3 }   // G3
+      ];
+    } else if (type === 'info') {
+      // Info: single cheerful note
+      notes = [
+        { freq: 440, duration: 0.25 } // A4
+      ];
+    }
+    
+    let startTime = now;
+    notes.forEach(note => {
+      const osc = audioContext.createOscillator();
+      const gain = audioContext.createGain();
+      
+      osc.frequency.value = note.freq;
+      osc.type = 'sine';
+      gain.gain.setValueAtTime(0.2, startTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, startTime + note.duration);
+      
+      osc.connect(gain);
+      gain.connect(audioContext.destination);
+      
+      osc.start(startTime);
+      osc.stop(startTime + note.duration);
+      
+      startTime += note.duration;
+    });
+  } catch (e) {
+    // Silently fail if Web Audio API not available
+  }
+}
+
 
 // ==========================================
 // INITIALIZATION
@@ -76,7 +130,9 @@ function init() {
       document.getElementById('config-overlay').classList.add('hidden');
       loadDashboardData();
       setupRealtime();
+      playNotificationSound('success');
     } catch (e) {
+      playNotificationSound('error');
       alert("Failed to connect to Supabase. Check your credentials.");
       document.getElementById('config-overlay').classList.remove('hidden');
     }
@@ -101,12 +157,14 @@ function saveConfig() {
   const key = document.getElementById('config-key').value.trim();
   
   if (!url || !key) {
+    playNotificationSound('error');
     alert('Please enter both URL and Anon Key');
     return;
   }
   
   localStorage.setItem('supabase_url', url);
   localStorage.setItem('supabase_anon_key', key);
+  playNotificationSound('success');
   window.location.reload();
 }
 
@@ -141,6 +199,7 @@ async function loadDashboardData() {
     renderDashboard();
   } catch (error) {
     console.error('Error fetching data:', error);
+    playNotificationSound('error');
     alert('Error fetching live data. See console for details.');
   }
 }
@@ -275,6 +334,7 @@ async function deleteAllUsers() {
   );
   if (typed === null) return;
   if (typed.trim().toUpperCase() !== 'DELETE ALL') {
+    playNotificationSound('error');
     alert('Galat input. Operation cancel ho gaya.');
     return;
   }
@@ -327,6 +387,7 @@ async function deleteAllUsers() {
     attendanceRecords = [];
     renderDashboard();
 
+    playNotificationSound('success');
     alert('Successfully deleted!\n\nSab users aur attendance data database se remove ho gaye.\nKoi bhi user ab "already logged in" nahi dikhega.');
 
   } catch (err) {
@@ -335,6 +396,7 @@ async function deleteAllUsers() {
     btn.innerHTML = 'Delete All Users';
     btn.disabled = false;
     refreshAdminIcons();
+    playNotificationSound('error');
     alert('Error!\n\n' + err.message + '\n\nPlease console check karo.');
   }
 }
