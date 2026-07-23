@@ -225,6 +225,19 @@ function refreshIcons() {
 async function loadUser() {
   const saved = localStorage.getItem('attendance_tracker_user');
   if (saved) {
+    // Check if previous session was properly closed
+    const sessionStatus = localStorage.getItem('att_session_status');
+    if (sessionStatus === 'active') {
+      // Session was not properly closed - user abandoned session
+      // Clear auto-login and force them to login again
+      console.log('[loadUser] Previous session was not properly closed. Clearing auto-login.');
+      localStorage.removeItem('attendance_tracker_user');
+      localStorage.removeItem('att_session_status');
+      clearLocalStorageForEnrollment(JSON.parse(saved).enrollment);
+      currentUser = null;
+      return false;
+    }
+
     currentUser = JSON.parse(saved);
 
     // Verify user still exists in Supabase (in case admin deleted them)
@@ -362,6 +375,7 @@ async function handleRegister() {
   localStorage.setItem('att_user_' + enrollment, JSON.stringify({ profile: currentUser, attendance: {}, savedDays: {} }));
   localStorage.setItem('att_loggedIn', enrollment);
   localStorage.setItem('attendance_tracker_user', JSON.stringify(currentUser));
+  localStorage.setItem('att_session_status', 'active');
   showApp();
   const welcomeMsg = `Registration successful. Welcome, ${name}!`;
   showToast(welcomeMsg, 'success');
@@ -441,6 +455,7 @@ async function handleLogin() {
   
   localStorage.setItem('att_loggedIn', enrollment);
   localStorage.setItem('attendance_tracker_user', JSON.stringify(currentUser));
+  localStorage.setItem('att_session_status', 'active');
   showApp();
   const userName = currentUser.name;
   const hour = new Date().getHours();
@@ -467,6 +482,7 @@ function handleLogout() {
   showToast(logoutMsg, 'info');
   speakMessage(logoutMsg);
   localStorage.removeItem('att_loggedIn');
+  localStorage.removeItem('att_session_status');
   currentUser = null;
   attendanceData = {};
   document.getElementById('app-view').classList.add('hidden');
@@ -1717,7 +1733,29 @@ async function init() {
   document.getElementById('login-enrollment').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') handleLogin();
   });
+
+  // ==========================================
+  // SESSION MANAGEMENT - Detect abandoned sessions
+  // ==========================================
+  // If user leaves page without properly logging out, mark session as abandoned
+  window.addEventListener('beforeunload', () => {
+    if (currentUser && localStorage.getItem('att_session_status') === 'active') {
+      // User is leaving while logged in - don't clear yet (they might come back)
+      // Just mark that session is still active
+    }
+  });
+
+  // Alternative: Mark session as abandoned after a certain time
+  window.addEventListener('unload', () => {
+    if (currentUser) {
+      // User is closing/leaving - keep session as active so it gets cleared on next load
+      localStorage.setItem('att_session_status', 'active');
+    }
+  });
 }
 
+// ==========================================
+// PAGE VISIBILITY - Detect tab switch
+// ==========================================
 // Start the app
 document.addEventListener('DOMContentLoaded', init);
