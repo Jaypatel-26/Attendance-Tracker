@@ -3,6 +3,26 @@ let students = [];
 let attendanceRecords = [];
 
 // ==========================================
+// AUDIO CONTEXT - Pre-initialize for faster sound playback on mobile
+// ==========================================
+let audioContext = null;
+
+function initAudioContext() {
+  try {
+    if (!audioContext) {
+      audioContext = new (window.AudioContext || window.webkitAudioContext)();
+      // Resume audio context for mobile (required after user interaction)
+      if (audioContext.state === 'suspended') {
+        audioContext.resume().catch(() => {});
+      }
+    }
+    return audioContext;
+  } catch (e) {
+    return null;
+  }
+}
+
+// ==========================================
 // TIMETABLE (same as app.js) - for weighted pts
 // lab slot = 2 pts, theory/elective = 1 pt
 // ==========================================
@@ -65,48 +85,61 @@ function getSlotPoints(dateStr, slotIndex, batch) {
 
 function playNotificationSound(type = 'info') {
   try {
-    const audioContext = new (window.AudioContext || window.webkitAudioContext)();
-    const now = audioContext.currentTime;
-    
+    // Initialize audio context if needed
+    const ctx = initAudioContext();
+    if (!ctx) return;
+
+    // Resume context if suspended (for mobile)
+    if (ctx.state === 'suspended') {
+      ctx.resume().catch(() => {});
+    }
+
+    const now = ctx.currentTime;
     let notes = [];
+    
     if (type === 'success') {
-      // Success: ascending notes
+      // Success: ascending notes - quick and bright
       notes = [
-        { freq: 523.25, duration: 0.1 }, // C5
-        { freq: 659.25, duration: 0.1 }, // E5
-        { freq: 783.99, duration: 0.2 }  // G5
+        { freq: 523.25, duration: 0.08 },  // C5
+        { freq: 659.25, duration: 0.08 },  // E5
+        { freq: 783.99, duration: 0.12 }   // G5
       ];
     } else if (type === 'error') {
       // Error: low descending notes
       notes = [
-        { freq: 349.23, duration: 0.15 }, // F4
-        { freq: 261.63, duration: 0.15 }, // C4
-        { freq: 196.00, duration: 0.3 }   // G3
+        { freq: 349.23, duration: 0.1 },   // F4
+        { freq: 261.63, duration: 0.1 },   // C4
+        { freq: 196.00, duration: 0.2 }    // G3
       ];
     } else if (type === 'info') {
-      // Info: single cheerful note
+      // Info: single quick note
       notes = [
-        { freq: 440, duration: 0.25 } // A4
+        { freq: 440, duration: 0.15 }      // A4
       ];
     }
-    
+
     let startTime = now;
     notes.forEach(note => {
-      const osc = audioContext.createOscillator();
-      const gain = audioContext.createGain();
-      
-      osc.frequency.value = note.freq;
-      osc.type = 'sine';
-      gain.gain.setValueAtTime(0.2, startTime);
-      gain.gain.exponentialRampToValueAtTime(0.01, startTime + note.duration);
-      
-      osc.connect(gain);
-      gain.connect(audioContext.destination);
-      
-      osc.start(startTime);
-      osc.stop(startTime + note.duration);
-      
-      startTime += note.duration;
+      try {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        osc.frequency.setValueAtTime(note.freq, startTime);
+        osc.type = 'sine';
+        
+        gain.gain.setValueAtTime(0.3, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, startTime + note.duration);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+
+        osc.start(startTime);
+        osc.stop(startTime + note.duration);
+
+        startTime += note.duration;
+      } catch (e) {
+        // Silently continue if note creation fails
+      }
     });
   } catch (e) {
     // Silently fail if Web Audio API not available
@@ -136,8 +169,15 @@ function speakMessage(text) {
 // ==========================================
 
 function init() {
+  // Initialize audio context for faster sound playback on mobile
+  initAudioContext();
+  
   const url = 'https://adgiosrjigtlpvugdlzd.supabase.co';
   const key = 'sb_publishable_hblB-GFtLPB4vIubo2bPng_bzZX1W3O';
+
+  // Also initialize audio on first user interaction
+  document.addEventListener('click', () => { initAudioContext(); }, { once: true });
+  document.addEventListener('touchstart', () => { initAudioContext(); }, { once: true });
 
   refreshAdminIcons();
 
