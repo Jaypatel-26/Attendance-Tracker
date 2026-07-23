@@ -403,7 +403,8 @@ async function deleteAllUsers() {
   );
   if (typed === null) return;
   if (typed.trim().toUpperCase() !== 'DELETE ALL') {
-    const msg = 'Invalid input. Operation cancelled!';\n    speakMessage(msg);
+    const msg = 'Invalid input. Operation cancelled!';
+    speakMessage(msg);
     playNotificationSound('error');
     alert('Galat input. Operation cancel ho gaya.');
     return;
@@ -457,15 +458,20 @@ async function deleteAllUsers() {
     attendanceRecords = [];
     renderDashboard();
 
-    playNotificationSound('success');    const deleteMsg = 'Successfully deleted! All users and attendance data have been removed from the database.';\n    speakMessage(deleteMsg);    alert('Successfully deleted!\n\nSab users aur attendance data database se remove ho gaye.\nKoi bhi user ab "already logged in" nahi dikhega.');
+    playNotificationSound('success');
+    const deleteMsg = 'Successfully deleted! All users and attendance data have been removed from the database.';
+    speakMessage(deleteMsg);
+    alert('Successfully deleted!\n\nSab users aur attendance data database se remove ho gaye.\nKoi bhi user ab "already logged in" nahi dikhega.');
 
   } catch (err) {
     console.error('Delete failed:', err);
     const btn = document.querySelector('.btn-danger-action');
     btn.innerHTML = 'Delete All Users';
     btn.disabled = false;
-    refreshAdminIcons();    const errMsg = 'Error! ' + err.message;
-    speakMessage(errMsg);    playNotificationSound('error');
+    refreshAdminIcons();
+    const errMsg = 'Error! ' + err.message;
+    speakMessage(errMsg);
+    playNotificationSound('error');
     alert('Error!\n\n' + err.message + '\n\nPlease console check karo.');
   }
 }
