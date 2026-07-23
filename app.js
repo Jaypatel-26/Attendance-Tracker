@@ -398,8 +398,13 @@ async function handleRegister() {
   localStorage.setItem('att_session_status', 'active');
   showApp();
   const welcomeMsg = `Registration successful. Welcome, ${name}!`;
-  showToast(welcomeMsg, 'success');
-  speakMessage(welcomeMsg);
+  
+  // Small delay on mobile for audio context to be ready
+  setTimeout(() => {
+    playNotificationSound('success');
+    showToast(welcomeMsg, 'success');
+    speakMessage(welcomeMsg);
+  }, 150);
 }
 
 
@@ -484,9 +489,13 @@ async function handleLogin() {
   else if (hour >= 17) greeting = 'Good evening';
   
   const welcomeMsg = `Welcome back, ${userName}! ${greeting}!`;
-  playNotificationSound('success');
-  showToast(welcomeMsg, 'success');
-  speakMessage(welcomeMsg);
+  
+  // Small delay on mobile for audio context to be ready
+  setTimeout(() => {
+    playNotificationSound('success');
+    showToast(welcomeMsg, 'success');
+    speakMessage(welcomeMsg);
+  }, 150);
 }
 
 function goToAdmin() {
