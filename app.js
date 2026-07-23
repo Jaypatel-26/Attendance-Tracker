@@ -484,6 +484,7 @@ async function handleLogin() {
   else if (hour >= 17) greeting = 'Good evening';
   
   const welcomeMsg = `Welcome back, ${userName}! ${greeting}!`;
+  playNotificationSound('success');
   showToast(welcomeMsg, 'success');
   speakMessage(welcomeMsg);
 }
