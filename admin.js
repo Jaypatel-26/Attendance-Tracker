@@ -113,6 +113,23 @@ function playNotificationSound(type = 'info') {
   }
 }
 
+function speakMessage(text) {
+  try {
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
+    utterance.volume = 0.8;
+    utterance.lang = 'en-US';
+    
+    window.speechSynthesis.speak(utterance);
+  } catch (e) {
+    // Silently fail if Speech Synthesis not available
+  }
+}
+
 
 // ==========================================
 // INITIALIZATION
@@ -130,10 +147,13 @@ function init() {
       document.getElementById('config-overlay').classList.add('hidden');
       loadDashboardData();
       setupRealtime();
+      speakMessage('Successfully connected to database!');
       playNotificationSound('success');
     } catch (e) {
+      const msg = 'Failed to connect to Supabase. Check your credentials.';
+      speakMessage(msg);
       playNotificationSound('error');
-      alert("Failed to connect to Supabase. Check your credentials.");
+      alert(msg);
       document.getElementById('config-overlay').classList.remove('hidden');
     }
   } else {
@@ -157,13 +177,16 @@ function saveConfig() {
   const key = document.getElementById('config-key').value.trim();
   
   if (!url || !key) {
+    const msg = 'Please enter both URL and Anon Key';
+    speakMessage(msg);
     playNotificationSound('error');
-    alert('Please enter both URL and Anon Key');
+    alert(msg);
     return;
   }
   
   localStorage.setItem('supabase_url', url);
   localStorage.setItem('supabase_anon_key', key);
+  speakMessage('Configuration saved successfully!');
   playNotificationSound('success');
   window.location.reload();
 }
@@ -199,8 +222,10 @@ async function loadDashboardData() {
     renderDashboard();
   } catch (error) {
     console.error('Error fetching data:', error);
+    const msg = 'Error fetching live data. See console for details.';
+    speakMessage(msg);
     playNotificationSound('error');
-    alert('Error fetching live data. See console for details.');
+    alert(msg);
   }
 }
 
@@ -334,6 +359,7 @@ async function deleteAllUsers() {
   );
   if (typed === null) return;
   if (typed.trim().toUpperCase() !== 'DELETE ALL') {
+    const msg = 'Invalid input. Operation cancelled!';\n    speakMessage(msg);
     playNotificationSound('error');
     alert('Galat input. Operation cancel ho gaya.');
     return;
@@ -387,16 +413,15 @@ async function deleteAllUsers() {
     attendanceRecords = [];
     renderDashboard();
 
-    playNotificationSound('success');
-    alert('Successfully deleted!\n\nSab users aur attendance data database se remove ho gaye.\nKoi bhi user ab "already logged in" nahi dikhega.');
+    playNotificationSound('success');    const deleteMsg = 'Successfully deleted! All users and attendance data have been removed from the database.';\n    speakMessage(deleteMsg);    alert('Successfully deleted!\n\nSab users aur attendance data database se remove ho gaye.\nKoi bhi user ab "already logged in" nahi dikhega.');
 
   } catch (err) {
     console.error('Delete failed:', err);
     const btn = document.querySelector('.btn-danger-action');
     btn.innerHTML = 'Delete All Users';
     btn.disabled = false;
-    refreshAdminIcons();
-    playNotificationSound('error');
+    refreshAdminIcons();    const errMsg = 'Error! ' + err.message;
+    speakMessage(errMsg);    playNotificationSound('error');
     alert('Error!\n\n' + err.message + '\n\nPlease console check karo.');
   }
 }

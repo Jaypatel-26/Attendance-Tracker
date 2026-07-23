@@ -363,7 +363,9 @@ async function handleRegister() {
   localStorage.setItem('att_loggedIn', enrollment);
   localStorage.setItem('attendance_tracker_user', JSON.stringify(currentUser));
   showApp();
-  showToast('Registration successful. Welcome, ' + name + '!', 'success');
+  const welcomeMsg = `Registration successful. Welcome, ${name}!`;
+  showToast(welcomeMsg, 'success');
+  speakMessage(welcomeMsg);
 }
 
 
@@ -440,7 +442,15 @@ async function handleLogin() {
   localStorage.setItem('att_loggedIn', enrollment);
   localStorage.setItem('attendance_tracker_user', JSON.stringify(currentUser));
   showApp();
-  showToast('Welcome back, ' + currentUser.name + '!', 'success');
+  const userName = currentUser.name;
+  const hour = new Date().getHours();
+  let greeting = 'Good morning';
+  if (hour >= 12 && hour < 17) greeting = 'Good afternoon';
+  else if (hour >= 17) greeting = 'Good evening';
+  
+  const welcomeMsg = `Welcome back, ${userName}! ${greeting}!`;
+  showToast(welcomeMsg, 'success');
+  speakMessage(welcomeMsg);
 }
 
 function goToAdmin() {
@@ -453,7 +463,9 @@ function goToAdmin() {
 }
 
 function handleLogout() {
-  showToast('You have been logged out!', 'info');
+  const logoutMsg = 'You have been logged out!';
+  showToast(logoutMsg, 'info');
+  speakMessage(logoutMsg);
   localStorage.removeItem('att_loggedIn');
   currentUser = null;
   attendanceData = {};
@@ -684,7 +696,7 @@ function getAttendanceStatusMessage(pct) {
 
 
 // ==========================================
-// NOTIFICATION SOUNDS
+// NOTIFICATION SOUNDS & VOICE
 // ==========================================
 
 function playNotificationSound(type = 'info') {
@@ -734,6 +746,23 @@ function playNotificationSound(type = 'info') {
     });
   } catch (e) {
     // Silently fail if Web Audio API not available
+  }
+}
+
+function speakMessage(text) {
+  try {
+    // Cancel any ongoing speech
+    window.speechSynthesis.cancel();
+    
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.rate = 0.95;
+    utterance.pitch = 1.0;
+    utterance.volume = 0.8;
+    utterance.lang = 'en-US';
+    
+    window.speechSynthesis.speak(utterance);
+  } catch (e) {
+    // Silently fail if Speech Synthesis not available
   }
 }
 
@@ -1195,7 +1224,9 @@ function markAllPresent() {
     tempAttendance[dateStr][idx] = 'present';
   });
   renderMarkAttendance();
-  showToast('All lectures marked present.', 'success');
+  const msg = 'All lectures marked present.';
+  showToast(msg, 'success');
+  speakMessage(msg);
 }
 
 function markAllAbsent() {
@@ -1208,13 +1239,17 @@ function markAllAbsent() {
     tempAttendance[dateStr][idx] = 'absent';
   });
   renderMarkAttendance();
-  showToast('All lectures marked absent.', 'error');
+  const msg = 'All lectures marked absent.';
+  showToast(msg, 'error');
+  speakMessage(msg);
 }
 
 function saveDayAttendance(dateStr) {
   const temp = tempAttendance[dateStr];
   if (!temp || Object.keys(temp).length === 0) {
-    showToast('Please mark attendance for at least one lecture!', 'error');
+    const msg = 'Please mark attendance for at least one lecture!';
+    showToast(msg, 'error');
+    speakMessage(msg);
     return;
   }
 
@@ -1225,7 +1260,9 @@ function saveDayAttendance(dateStr) {
   editingDay = false;
   saveData();
   renderMarkAttendance();
-  showToast('Attendance saved for ' + dateStr + '.', 'success');
+  const savedMsg = 'Attendance saved for ' + dateStr + '.';
+  showToast(savedMsg, 'success');
+  speakMessage(savedMsg);
 }
 
 function editDayAttendance(dateStr) {
@@ -1233,7 +1270,9 @@ function editDayAttendance(dateStr) {
   // Load saved data into temp for editing
   tempAttendance[dateStr] = { ...getAttendanceForDate(dateStr) };
   renderMarkAttendance();
-  showToast('Edit mode enabled. Make changes and save again.', 'info');
+  const editMsg = 'Edit mode enabled. Make changes and save again.';
+  showToast(editMsg, 'info');
+  speakMessage(editMsg);
 }
 
 function navigateDate(offset) {
