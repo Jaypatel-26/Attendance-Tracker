@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Attendance Tracker</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="admin.css">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+
+  <div id="config-overlay" class="overlay hidden">
+    <div class="config-card">
+      <h2><i data-lucide="settings" aria-hidden="true"></i> Configure Supabase</h2>
+      <p>Please enter your Supabase Project URL and Anon Key to connect the Admin Panel to your database.</p>
+
+      <div class="form-group">
+        <label>Supabase URL</label>
+        <input type="text" id="config-url" placeholder="https://xxxx.supabase.co">
+      </div>
+      <div class="form-group">
+        <label>Supabase Anon Key</label>
+        <input type="password" id="config-key" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...">
+      </div>
+      <button class="btn-primary" onclick="saveConfig()">Connect &amp; Reload</button>
+      <p class="help-text">Your keys will be saved in localStorage on this device.</p>
+    </div>
+  </div>
+
+  <div class="admin-layout">
+    <aside class="admin-sidebar">
+      <div class="brand">
+        <div class="brand-icon">
+          <i data-lucide="shield-check" aria-hidden="true"></i>
+        </div>
+        <h2>Admin Panel</h2>
+      </div>
+      <nav class="nav-menu">
+        <a href="#" class="nav-item active">
+          <i data-lucide="activity" aria-hidden="true"></i>
+          <span>Live Dashboard</span>
+        </a>
+        <a href="index.html" class="nav-item">
+          <i data-lucide="graduation-cap" aria-hidden="true"></i>
+          <span>Student App</span>
+        </a>
+      </nav>
+    </aside>
+
+    <main class="admin-main">
+      <header class="main-header">
+        <div class="header-left">
+          <h1>Live Student Attendance</h1>
+          <div class="live-indicator">
+            <div class="pulse"></div>
+            <span>Realtime Active</span>
+          </div>
+        </div>
+        <div class="header-actions">
+          <button class="btn-danger-action" onclick="deleteAllUsers()">
+            <i data-lucide="trash-2" aria-hidden="true"></i>
+            <span>Delete All Users</span>
+          </button>
+        </div>
+      </header>
+
+      <div class="stats-cards">
+        <div class="stat-card">
+          <h3>Total Students</h3>
+          <p id="stat-total-students">0</p>
+        </div>
+        <div class="stat-card">
+          <h3>Average Attendance</h3>
+          <p id="stat-avg-attendance">0%</p>
+        </div>
+        <div class="stat-card">
+          <h3>Low Attendance (&lt;75%)</h3>
+          <p id="stat-low-attendance" class="text-danger">0</p>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Enrollment</th>
+              <th>Name</th>
+              <th>Batch</th>
+              <th>Elective</th>
+              <th>Total Days</th>
+              <th>Present</th>
+              <th>Absent</th>
+              <th>Overall %</th>
+            </tr>
+          </thead>
+          <tbody id="students-table-body">
+            <tr>
+              <td colspan="8" class="loading-cell">Loading live data...</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </main>
+  </div>
+
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="admin.js?v=3"></script>
+</body>
+</html>
